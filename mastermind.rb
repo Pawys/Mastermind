@@ -13,7 +13,7 @@ class PegBoard
 end
 class Gameboard
   attr_accessor :codemaker_choice
-  def initialize()
+  def initialize(allow_doubles)
     @size = 4
     @max_number_of_guesses = 12
     @guesses = 0
@@ -24,6 +24,7 @@ class Gameboard
     create_codemaker_choice()
     @black_peg = Color.new(["⚫", nil])
     @white_peg = Color.new(["⚪", nil])
+    @allow_doubles = allow_doubles
   end
   def print_gameboard()
     puts " ___________________    ____________________  "
@@ -48,8 +49,15 @@ class Gameboard
   def create_codemaker_choice()
     choices = []
     @size.times do |i|
-      choices.push(Color.new([@colors[rand(6)], i]))
-      p choices[i].color
+      chosen_color = [@colors[rand(6)], i]
+      if !@allow_doubles && choices.length > 0
+        choices.each do |choice|
+          while chosen_color[0] == choice.color
+            chosen_color = [@colors[rand(6)], i]
+          end
+        end
+      end
+      choices.push(Color.new(chosen_color))
     end
     @codemaker_choice = PegBoard.new(choices)
   end
@@ -94,12 +102,19 @@ class Gameboard
     @code_feedback.push(PegBoard.new(found_array))
   end
 end
+class Player
+  attr_accessor :name
+  def initialize(name)
+    @name = name
+  end
+end
 class Mastermind
   def initialize()
     @size = 4
-    @gameboard = Gameboard.new()
     @colors = ["Red", "Yellow", "Green", "Blue", "Purple", "White","Rd","Yl","Gn","Bl","Pr","Wh"]
     @loop = true
+    @current_player
+    @allow_doubles
   end
 
   def draw()
@@ -116,9 +131,16 @@ class Mastermind
     @gameboard.add_codebreaker_choice(codebreaker_choices)
   end
   def show_rules()
-    puts "Would you like to review the rules? (recommended)"
-    return unless gets.chomp == "y"
-    system "clear"
+    print "Would you like to review the rules? (y/n): "
+    player_choice = gets.chomp
+    until player_choice == "y" || player_choice == "n"
+      puts "Incorect choice entered."
+      puts 'Choose again.'
+      print "Would you like to review the rules? (y/n): "
+      player_choice = gets.chomp
+    end
+    return unless player_choice == "y"
+    system("cls") || system("clear")
     puts "1. Your objective as the codebreaker is to decipher the secret code crafted by the codemaker."
     puts "2. The secret code comprises four colors selected by the codemaker, allowing for duplicates. Empty spaces are not permitted."
     puts "3. To make a guess, input any combination of four colors."
@@ -135,11 +157,40 @@ class Mastermind
     puts "Press return to continue"
     gets
   end
-
-  def play()
+  def choose_options()
+    system("cls") || system("clear")
+    puts "Which player do you want to be?"
+    puts "1: Codebreaker - You will try to break the code chosen by the codemaker."
+    puts "2: Codemaker - You will create the code that the codebreaker will have to guess"
+    print "Player Choice (1/2): "
+    player_choice = gets.chomp.to_i
+    until player_choice == 1 || player_choice == 2
+      puts "Incorect choice entered."
+      puts 'Choose again.'
+      print "Player Choice (1/2): "
+      player_choice = gets.chomp.to_i
+    end
+    @current_player = [Player.new("Codebreaker"),Player.new("Codemaker")][player_choice - 1]
+    system("cls") || system("clear")
+    print "Do you want to allow doubles in the code? (y/n)"
+    player_choice = gets.chomp
+    until player_choice == "y" || player_choice == "n"
+      puts "Incorect choice entered."
+      puts 'Choose again.'
+      print "Would you like to review the rules? (y/n): "
+      player_choice = gets.chomp
+    end
+  @allow_doubles = (player_choice == "y") ? true : false
+  end
+  def game()
     show_rules()
+    choose_options()
+    @gameboard = Gameboard.new(@allow_doubles)
+    play()
+  end
+  def play()
     while @loop
-      system "clear"
+      system("cls") || system("clear")
       puts "Choose one of the avaliable colors:"
       puts "Red[Rd], Yellow[Yl], Green[Gn], Blue[Bl], Purple[Pr], White[Wh]"
       puts ""
@@ -159,7 +210,7 @@ class Mastermind
         player_chocies.push(player_choice)
       end
       codebreaker_turn(player_chocies)
-      system "clear"
+      system("cls") || system("clear")
       @gameboard.print_gameboard()
       puts ""
       check_result()
@@ -167,14 +218,19 @@ class Mastermind
   end
 
   def check_result()
-    end_game("codebreaker") if @gameboard.codebreaker_win?
-    end_game("codemaker") if @gameboard.codemaker_win?
+    end_game("Codebreaker") if @gameboard.codebreaker_win?
+    end_game("Codemaker") if @gameboard.codemaker_win?
   end
-
   def end_game(winning_player) 
+    case @current_player.name
+    when "Codebreaker"
+      puts "Congratulations you managed to guess the code!" if winning_player == "Codebreaker"
+      if winning_player == "Codemaker"
+        puts "You didn't manage to guess the code"
+      end
+      puts "The code was |#{@gameboard.codemaker_choice.board.map{|color| color = color.color}.join("|")}|"
+    end
     @loop = false
-    puts "The #{winning_player} wins!"
-    puts "The code was #{@gameboard.codemaker_choice.board.map{|color| color = color.color}.join(" ")}"
     puts ""
     puts "Do you want to play again? [y/n]"
     reset() if gets.chomp == 'y'
@@ -187,4 +243,4 @@ class Mastermind
   end
 end
 game = Mastermind.new()
-game.play()
+game.game()
