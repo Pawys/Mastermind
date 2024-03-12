@@ -6,7 +6,7 @@ require_relative 'computer'
 class Mastermind
   include GetFeedback
   include GameMessages
-  def initialize
+  def initialize(allow_emojis)
     @colors = ["Rd","Yl","Gn","Bl","Pr","Wh"]
     @code
     @code_feedback = Array.new()
@@ -16,6 +16,13 @@ class Mastermind
     @guesses = 0
     @max_gueses = 12
     @winning_player
+    if allow_emojis == 'y'
+      @black_peg = '⚫'
+      @white_peg = '⚪'
+    else
+      @black_peg = 'B '
+      @white_peg = 'W '
+    end
   end
   def play()
     assign_player()
@@ -34,7 +41,7 @@ class Mastermind
       end
       guess = @codebreaker.guess(@code_feedback[@guesses - 1]) if @guesses > 0
       guess = @codebreaker.guess(nil) if @guesses == 0
-      feedback = check(guess,@code)
+      feedback = check(guess,@code,@black_peg,@white_peg)
       @codebreaker_guesses.push(guess)
       @code_feedback.push(feedback)
       @guesses += 1
@@ -46,7 +53,7 @@ class Mastermind
       end_game()
   end
   def check_result()
-    @winning_player = @codebreaker if @code_feedback[@guesses - 1].uniq == ["⚫"]
+    @winning_player = @codebreaker if @code_feedback[@guesses - 1].uniq == [@black_peg]
     @winning_player = @codemaker if @guesses >= @max_gueses
   end
   def end_game()
@@ -64,10 +71,10 @@ class Mastermind
     player_choice = choose_player().to_i
     if player_choice == 1
       @codebreaker = Player.new("Player") 
-      @codemaker = Computer.new("Computer")
+      @codemaker = Computer.new("Computer",@black_peg,@white_peg)
     else
       @codemaker = Player.new("Player") 
-      @codebreaker = Computer.new("Computer")
+      @codebreaker = Computer.new("Computer",@black_peg,@white_peg)
     end
   end
   def display_board()

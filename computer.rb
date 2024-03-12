@@ -3,18 +3,20 @@ require_relative 'get_feedback'
 class Computer
   include GetFeedback
   attr_accessor :name
-  def initialize(name)
+  def initialize(name, black_peg, white_peg)
   @colors = ["Rd","Yl","Gn","Bl","Pr","Wh"]
   @all_possible_codes = @colors.product(@colors, @colors, @colors)
   @s = @all_possible_codes.dup
   @guesses = 0
   @last_guess
   @name = name
+  @black_peg = black_peg
+  @white_peg = white_peg
   end
   def guess(last_response)
     unless last_response == nil
       @s.dup.each do |possible_code|
-        @s.delete(possible_code) if check(@last_guess, possible_code) != last_response
+        @s.delete(possible_code) if check(@last_guess, possible_code,@black_peg,@white_peg) != last_response
       end
     end
     if @guesses > 0

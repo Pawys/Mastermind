@@ -1,5 +1,5 @@
 module GetFeedback
-  def check(guess,code)
+  def check(guess,code,black_peg,white_peg)
     feedback = []
     unchecked_choices = code.dup
     unchecked_player_choices = guess.dup
@@ -9,13 +9,13 @@ module GetFeedback
         next if player_color.nil?
         if number == 0
           if player_color == unchecked_choices[index]
-            feedback.push("⚫")
+            feedback.push(black_peg)
             unchecked_choices[index] = nil
             unchecked_player_choices[index] = nil
           end
         elsif number == 1
           if unchecked_choices.include?(player_color)
-            feedback.push("⚪")
+            feedback.push(white_peg)
             unchecked_choices[unchecked_choices.find_index(player_color)] = nil 
             unchecked_player_choices[index] = nil
           end
